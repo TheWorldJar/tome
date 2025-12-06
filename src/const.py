@@ -7,3 +7,4 @@ NOTE_PATH = "./note/"
 TRANSCRIBE_MODEL = "medium.en"
 NOTE_MODEL = ""
 HASH_ALGORITHM = "sha256"
+PROMPT_EXTENSIONS = [".txt", ".md"]

@@ -1,6 +1,6 @@
-import uuid
 import hashlib
-
+import os
+import uuid
 from datetime import timedelta
 
 from src.const import TRANSCRIBE_PATH, HASH_ALGORITHM
@@ -18,6 +18,8 @@ def write_transcript(transcription):
             + segment["text"].strip()
             + "\n"
         )
+    if not os.path.exists(TRANSCRIBE_PATH) or not os.path.isdir(TRANSCRIBE_PATH):
+        os.makedirs(TRANSCRIBE_PATH)
     location = f"{TRANSCRIBE_PATH}{uuid.uuid4()}"
     with open(location, "w", encoding="utf-8") as f:
         f.write(text)
@@ -31,3 +33,7 @@ def get_file_hash(file_path):
             hash_func.update(chunk)
 
     return hash_func.hexdigest()
+
+
+def get_extension(file_path):
+    return os.path.splitext(file_path)[1]

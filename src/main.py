@@ -1,30 +1,38 @@
+import asyncio
 import sys
 import time
-import asyncio
-
 from datetime import timedelta
+
 from halo import Halo
 
-from src.const import DB_PATH
+from src.const import DB_PATH, PROMPT_EXTENSIONS
 from src.database import create_db, setup_db
+from src.fileactions import get_extension
 from transcription import transcribe_text, load_model
 
 
+# TODO: Test with updated PyTorch
 async def main():
     try:
-        model = load_model()
-        spinner = Halo(text="Processing...", spinner="dots")
+        spinner = Halo(text="Processing...", spinner="bouncingBall")
 
         db_con = create_db(DB_PATH)
         setup_db(db_con)
 
-        # TODO: check for the correct number of arguments.
+        if len(sys.argv) != 3:
+            raise Exception("Usage: python main.py {audio_file} {prompt_file}")
         audio_file_path = sys.argv[1]
         prompt_file_path = sys.argv[2]
-
+        prompt_extension = get_extension(prompt_file_path)
+        if prompt_extension not in PROMPT_EXTENSIONS:
+            raise Exception(
+                f"Invalid prompt file extension! Got {prompt_extension}. Valid extensions are: {PROMPT_EXTENSIONS}"
+            )
         print(f"Transcribing: {audio_file_path}")
+
         start = time.time()
         spinner.start()
+        model = load_model()
         transcription_file_path = await transcribe_text(audio_file_path, model, db_con)
         spinner.succeed("Done!")
         print("Transcription time: " + str(timedelta(seconds=time.time() - start)))
