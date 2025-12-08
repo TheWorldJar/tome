@@ -12,7 +12,7 @@ def load_model():
     return whisper.load_model(TRANSCRIBE_MODEL)
 
 
-def transcribe_text(audio_location, model, cur):
+def transcribe_text(audio_location, model, cur, conn):
     options = {
         "language": "en",
         "task": "transcribe",
@@ -23,7 +23,9 @@ def transcribe_text(audio_location, model, cur):
 
     audio_hash = get_file_hash(audio_location)
     transcribe_row = get_transcription_by_hash(cur, audio_hash)
-    if transcribe_row is None or not os.path.exists(transcribe_row[-2]):
+    if transcribe_row is None or not os.path.exists(
+        transcribe_row["transcription_location"]
+    ):
         file_id = uuid.uuid4()
         transcription_location = write_transcript(
             model.transcribe(audio_location, **options),
@@ -32,6 +34,7 @@ def transcribe_text(audio_location, model, cur):
         transcription_hash = get_file_hash(transcription_location)
         insert_row(
             cur,
+            conn,
             TRANSCRIBE_DB_NAME,
             {
                 "audio_file_hash": audio_hash,
@@ -41,7 +44,7 @@ def transcribe_text(audio_location, model, cur):
         )
         print(f"Finished transcribing {transcription_location}!")
     else:
-        transcription_location = transcribe_row[-2]
+        transcription_location = transcribe_row["transcription_location"]
         file_id = os.path.splitext(os.path.basename(transcription_location))[0]
         print(f"Found transcription location: {transcription_location}!")
 
