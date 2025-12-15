@@ -75,7 +75,7 @@ def main():
         db_conn.close()
     except Exception as e:
         print(
-            "Unhandled exception! Please report it at https://github.com/TheWorldJar/notely/issues",
+            "Unhandled exception! Please report it at https://github.com/TheWorldJar/tome/issues",
             e,
         )
         sys.exit(1)

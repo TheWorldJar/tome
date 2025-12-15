@@ -43,7 +43,7 @@ def insert_row(cur, conn, table, row, config):
         conn.commit()
     except Exception as e:
         print(
-            "Unhandled db exception! Please report it at https://github.com/TheWorldJar/notely/issues",
+            "Unhandled db exception! Please report it at https://github.com/TheWorldJar/tome/issues",
             e,
         )
 
