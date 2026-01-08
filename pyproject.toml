@@ -3,7 +3,7 @@ requires = ["setuptools>=45.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "tome"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
     "torch",
     "torchvision",
@@ -12,34 +12,28 @@ dependencies = [
     "ollama",
     "numpy",
     "halo",
-    "pyyaml"
+    "pyyaml",
 ]
-authors = [
-    {name = "TheWorldJar", email = "theworldjar@protonmail.com"}
-]
+authors = [{ name = "TheWorldJar", email = "theworldjar@protonmail.com" }]
 description = "Create transcripts from audio files and process thoses transcripts to create notes!"
 requires-python = ">= 3.9"
 [project.optional-dependencies]
-dev = [
-    "pytest"
-]
-[tool.black]
-line-length = 88
-target-version = ["py39"]
-include = '\.pyi?$'
-exclude = '''
-    /(
-      \.git
-      | \.venv
-      | build
-      | dist
-      | db
-      | transcribe
-      | note
-    )/
-'''
+dev = ["pytest"]
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["tome"]
+
+[tool.ruff.format]
+quote-style = "double"
 [project.scripts]
 tome = "tome.__main__:main"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }

@@ -1,9 +1,19 @@
 import hashlib
 import os
 from datetime import timedelta
+from typing import TypedDict
+from uuid import UUID
+
+from .config import Config
 
 
-def write_transcript(transcription, file_id, config):
+class Segment(TypedDict):
+    start: float
+    end: float
+    text: str
+
+
+def write_transcript(transcription: dict[str, list[Segment]], file_id: UUID, config: Config):
     segments = transcription["segments"]
     text = ""
     for segment in segments:
@@ -15,18 +25,16 @@ def write_transcript(transcription, file_id, config):
             + segment["text"].strip()
             + "\n"
         )
-    if not os.path.exists(config["transcripts_folder"]) or not os.path.isdir(
-        config["transcripts_folder"]
-    ):
+    if not os.path.exists(config["transcripts_folder"]) or not os.path.isdir(config["transcripts_folder"]):
         os.makedirs(config["transcripts_folder"])
     location = os.path.join(config["transcripts_folder"], str(file_id)) + ".txt"
     with open(location, "w", encoding="utf-8") as f:
-        f.write(text)
+        _ = f.write(text)
     return location
 
 
-def get_file_hash(file_path, config):
-    hash_func = hashlib.new(config["HASH_ALGORITHM"])
+def get_file_hash(file_path: str, config: Config):
+    hash_func = hashlib.new(config["hash_algorithm"])
     with open(file_path, "rb") as f:
         for chunk in iter(lambda: f.read(8192), b""):
             hash_func.update(chunk)
@@ -34,11 +42,11 @@ def get_file_hash(file_path, config):
     return hash_func.hexdigest()
 
 
-def get_extension(file_path):
+def get_extension(file_path: str):
     return os.path.splitext(file_path)[1]
 
 
-def read_file(file_path):
+def read_file(file_path: str):
     if not os.path.exists(file_path) or not os.path.isfile(file_path):
         return None
 
@@ -46,13 +54,11 @@ def read_file(file_path):
         return f.read()
 
 
-def write_note(note, file_id, config):
-    if not os.path.exists(config["output_folder"]) or not os.path.isdir(
-        config["output_folder"]
-    ):
+def write_note(note: str, file_id: UUID, config: Config):
+    if not os.path.exists(config["output_folder"]) or not os.path.isdir(config["output_folder"]):
         os.makedirs(config["output_folder"])
 
     location = os.path.join(config["output_folder"], str(file_id)) + ".txt"
     with open(location, "w", encoding="utf-8") as f:
-        f.write(note)
+        _ = f.write(note)
     return location

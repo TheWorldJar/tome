@@ -1,5 +1,5 @@
 from src.tome import fileactions
-from src.tome.config import config_exists, make_default_config, init_config
+from src.tome.config import config_exists, init_config, make_default_config_file
 
 
 def test_get_extension():
@@ -13,7 +13,7 @@ def test_get_extension():
 
 def test_get_file_hash():
     if not config_exists():
-        make_default_config()
+        make_default_config_file()
     config = init_config()
 
     hash1 = fileactions.get_file_hash("./src/tests/test.txt", config)

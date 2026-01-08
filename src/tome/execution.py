@@ -1,16 +1,27 @@
+from sqlite3 import Connection, Cursor
+from uuid import UUID
+
 import ollama
 from ollama import GenerateResponse
 
+from .config import Config
 from .database import get_note_by_hash, insert_row, update_note
-from .fileactions import read_file, get_file_hash, write_note
+from .fileactions import get_file_hash, read_file, write_note
 
 
 def get_ollama_response(
-    cur, conn, transcription_location, prompt_location, file_id, config
+    cur: Cursor,
+    conn: Connection,
+    transcription_location: str,
+    prompt_location: str,
+    file_id: UUID,
+    config: Config,
 ):
     transcription_content = read_file(transcription_location)
     transcription_hash = get_file_hash(transcription_location, config)
     prompt_content = read_file(prompt_location)
+
+    # TODO: verify that transcription_content and prompt_content are not None
 
     res: GenerateResponse = ollama.generate(
         model=config["output_model"],
@@ -25,7 +36,7 @@ def get_ollama_response(
         insert_row(
             cur,
             conn,
-            config["NOTES_DB_NAME"],
+            config["notes_db_name"],
             {
                 "transcription_location": transcription_location,
                 "transcription_hash": transcription_hash,
