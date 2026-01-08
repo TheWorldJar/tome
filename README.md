@@ -18,35 +18,49 @@ So I made **Tome** to run the AI process I wanted entirely on my machine. From t
 
 It is recommended to install this application in a virtual environment. In the root of this script, execute:
 
-`python -m venv .venv`
+```bash
+python -m venv .venv
+```
 
 Then, activate the environment:
 
 ### Linux/Macos
 
-`source .venv/bin/activate`
+```bash
+source .venv/bin/activate
+```
 
 ### Windows
 
-`.venv\Scripts\activate.bat`
+```bash
+.venv\Scripts\activate.bat
+```
 
 Once the environment is active, simply install the package through pip:
 
-`pip install -e .`
+```bash
+pip install -e .
+```
 
 Then, you can pull your desired Ollama model inside your environment after [manually installing](https://ollama.com/download) Ollama:
 
-`ollama pull {model}`
+```bash
+ollama pull {model}
+```
 
 ## Quick Start
 
 Once installed, the script can be used with the following command:
 
-`tome {path_to_audio_file} {path_to_prompt}`
+```bash
+tome {path_to_audio_file} {path_to_prompt}
+```
 
 Like this:
 
-`tome ./my_audio.mp3 ./my_prompt.txt`
+```bash
+tome ./my_audio.mp3 ./my_prompt.txt
+```
 
 The script will create a local SQLite database to store some of its actions, as well as a transcript and output folder, as specified in `config.yaml`.
 
