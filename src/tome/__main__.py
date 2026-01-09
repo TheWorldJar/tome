@@ -72,6 +72,9 @@ def main():
         print(f"All done! You note is available at: {note_location}")
         db_cur.close()
         db_conn.close()
+    except FileNotFoundError | ValueError as e:
+        print(e)
+        sys.exit(1)
     except Exception as e:
         print(
             "Unhandled exception! Please report it at https://github.com/TheWorldJar/tome/issues",

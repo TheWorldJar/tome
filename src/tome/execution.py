@@ -21,8 +21,6 @@ def get_ollama_response(
     transcription_hash = get_file_hash(transcription_location, config)
     prompt_content = read_file(prompt_location)
 
-    # TODO: verify that transcription_content and prompt_content are not None
-
     res: GenerateResponse = ollama.generate(
         model=config["output_model"],
         prompt=f"{prompt_content}\n\n## FILE CONTENT:\n{transcription_content}",

@@ -48,10 +48,13 @@ def get_extension(file_path: str):
 
 def read_file(file_path: str):
     if not os.path.exists(file_path) or not os.path.isfile(file_path):
-        return None
+        raise FileNotFoundError(f"File not found: {file_path}")
 
     with open(file_path, "r", encoding="utf-8") as f:
-        return f.read()
+        data = f.read()
+    if len(data) == 0:
+        raise ValueError(f"Aborting execution! File content is empty for {file_path}")
+    return data
 
 
 def write_note(note: str, file_id: UUID, config: Config):
