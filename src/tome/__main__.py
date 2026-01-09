@@ -1,3 +1,4 @@
+import argparse
 import gc
 import sys
 import time
@@ -19,6 +20,19 @@ from .transcription import load_model, transcribe_text
 
 def main():
     try:
+        parser = argparse.ArgumentParser(description="Transcribe audio files and generate notes using LLM prompts")
+        _ = parser.add_argument(
+            "audio_file",
+            type=str,
+            help="Path to the audio file to transcribe",
+        )
+        _ = parser.add_argument(
+            "prompt_file",
+            type=str,
+            help="Path to the prompt file to use for note generation",
+        )
+
+        args = parser.parse_args()
         torch.cuda.empty_cache()
         spinner = Halo(text="This may take a while...", spinner="bouncingBall")
 
@@ -29,22 +43,25 @@ def main():
         db_cur, db_conn = create_db(config)
         setup_db(db_cur, db_conn, config)
 
-        if len(sys.argv) != 3:
-            raise Exception("Usage: tome {audio_file} {prompt_file}")
-        audio_file_path = sys.argv[1]
-        prompt_file_path = sys.argv[2]
-        prompt_extension = get_extension(prompt_file_path)
+        if args.audio_file is None or args.prompt_file is None:
+            raise ValueError("Usage: tome {audio_file} {prompt_file}")
+        if not isinstance(args.audio_file, str):
+            raise ValueError("Make sure to provide a valid audio file path in between quotes!")
+        if not isinstance(args.prompt_file, str):
+            raise ValueError("Make sure to provide a valid prompt file path in between quotes!")
+
+        prompt_extension = get_extension(args.prompt_file)
         if prompt_extension not in config["prompt_extensions"]:
-            raise Exception(
+            raise ValueError(
                 f"Invalid prompt file extension! Got {prompt_extension}. Valid extensions are: {config['prompt_extensions']}"
             )
-        print(f"Transcribing: {audio_file_path}")
+        print(f"Transcribing: {args.audio_file}")
 
         start = time.time()
         _ = spinner.start()
         model = load_model(config)
         transcription_file_path, file_id = transcribe_text(
-            audio_file_path,
+            args.audio_file,
             model,
             db_cur,
             db_conn,
@@ -56,20 +73,20 @@ def main():
         torch.cuda.empty_cache()
         _ = gc.collect()
 
-        print(f"Executing prompt: {prompt_file_path}")
+        print(f"Executing prompt: {args.prompt_file}")
         start = time.time()
         _ = spinner.start()
         note_location = get_ollama_response(
             db_cur,
             db_conn,
             transcription_file_path,
-            prompt_file_path,
+            args.prompt_file,
             file_id,
             config,
         )
         _ = spinner.succeed("Done!")
         print("Execution time: " + str(timedelta(seconds=time.time() - start)))
-        print(f"All done! You note is available at: {note_location}")
+        print(f"All done! Your note is available at: {note_location}")
         db_cur.close()
         db_conn.close()
     except FileNotFoundError | ValueError as e:

@@ -61,7 +61,9 @@ def insert_row(cur: Cursor, conn: Connection, table: str, row: dict[str, str], c
             + f"'{row['note_hash']}');"
         )
     else:
-        raise Exception(f"Unknown table {table}")
+        raise ValueError(
+            f"Unknown table {table}. Valid tables are: {config['transcript_db_name']} and {config['notes_db_name']}"
+        )
     try:
         _ = cur.execute(query)
         assert cur.rowcount == 1
