@@ -82,10 +82,11 @@ The script has the following behaviour:
 - `output_folder`: The location you want final outputs to be output to. Default: `'./output'`
 - `transcription_model`: The Whisper model that will be used for the transcription task. Default: `'turbo'`
 - `output_model`: The Ollama model that will be used for the output task. Cloud models not supported. Default: `'gemma3:4b'`
+- `context_size`: The context size for the Ollama model. Default: `'4096'`
 
 Invalid configs will be replaced by a default config during runtime!
 
-## Troubleshooting
+## Troubleshooting  
 
 ### Whisper Models
 

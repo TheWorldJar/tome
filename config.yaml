@@ -14,3 +14,4 @@ transcription_model: "turbo"
 # - gpt-oss:20b: For more powerful systems
 # See https://ollama.com/library for more information. Not all models are available locally.
 output_model: "deepseek-r1:7b"
+context_size: "4096"

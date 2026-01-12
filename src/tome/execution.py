@@ -25,6 +25,7 @@ def get_ollama_response(
         model=config["output_model"],
         prompt=f"{prompt_content}\n\n## FILE CONTENT:\n{transcription_content}",
         keep_alive=0,
+        options={"num_ctx": config["context_size"]},
     )
     note_location = write_note(res.response, file_id, config)
     note_hash = get_file_hash(note_location, config)

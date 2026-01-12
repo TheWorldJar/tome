@@ -8,6 +8,7 @@ import torch
 from halo import Halo
 
 from .config import (
+    CONTEXT_SIZE,
     config_exists,
     init_config,
     make_default_config_file,
@@ -19,6 +20,8 @@ from .transcription import load_model, transcribe_text
 
 
 def main():
+    db_cur = None
+    db_conn = None
     try:
         parser = argparse.ArgumentParser(description="Transcribe audio files and generate notes using LLM prompts")
         _ = parser.add_argument(
@@ -89,17 +92,33 @@ def main():
         print(f"All done! Your note is available at: {note_location}")
         db_cur.close()
         db_conn.close()
-    except FileNotFoundError | ValueError as e:
-        print(e)
+    except (FileNotFoundError, ValueError) as e:
+        print("\n\n", e)
+        sys.exit(1)
+    except torch.OutOfMemoryError:
+        print(f"\n\nCUDA out of memory! Please reduce the context size in config.yaml! Default is {CONTEXT_SIZE}.\n\n")
         sys.exit(1)
     except Exception as e:
         print(
-            "Unhandled exception! Please report it at https://github.com/TheWorldJar/tome/issues",
+            "\n\nUnhandled exception! Please report it at https://github.com/TheWorldJar/tome/issues\n\n",
             e,
+            "\n\nType: ",
+            type(e),
         )
         sys.exit(1)
     finally:
-        sys.exit(0)
+        if db_cur is not None:
+            try:
+                db_cur.close()
+            except Exception:
+                pass
+        if db_conn is not None:
+            try:
+                db_conn.close()
+            except Exception:
+                pass
+        torch.cuda.empty_cache()
+        _ = gc.collect()
 
 
 if __name__ == "__main__":

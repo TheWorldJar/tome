@@ -46,7 +46,8 @@ def transcribe_text(
         print(f"Finished transcribing {transcription_location}!")
     else:
         transcription_location = str(transcribe_row["transcription_location"])
-        file_id = os.path.splitext(os.path.basename(transcription_location))[0]
+        file_id = uuid.UUID(os.path.splitext(os.path.basename(transcription_location))[0])
         print(f"Found transcription location: {transcription_location}!")
+        # TODO: Check if the transcription is empty. If it is, go through the normal process of transcribing the audio file.
 
-    return transcription_location, cast(UUID, file_id)
+    return transcription_location, file_id

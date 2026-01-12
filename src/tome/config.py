@@ -15,6 +15,7 @@ class Config(TypedDict):
     notes_db_name: str
     hash_algorithm: str
     prompt_extensions: list[str]
+    context_size: int
 
 
 DB_PATH = "./db/note.db"
@@ -27,6 +28,7 @@ DEFAULT_TRANSCRIBE_MODEL = "turbo"
 DEFAULT_OUTPUT_MODEL = "gemma3:4b"
 HASH_ALGORITHM = "sha256"
 PROMPT_EXTENSIONS = [".txt", ".md"]
+CONTEXT_SIZE = 4096
 
 
 def config_exists():
@@ -39,6 +41,7 @@ def make_default_config_file():
         "output_folder": DEFAULT_OUTPUT_PATH,
         "transcription_model": DEFAULT_TRANSCRIBE_MODEL,
         "output_model": DEFAULT_OUTPUT_MODEL,
+        "context_size": str(CONTEXT_SIZE),
     }
     with open("config.yaml", "w") as f:
         yaml.dump(data, f)
@@ -56,6 +59,7 @@ def init_config() -> Config:
         "notes_db_name": NOTES_DB_NAME,
         "hash_algorithm": HASH_ALGORITHM,
         "prompt_extensions": PROMPT_EXTENSIONS,
+        "context_size": CONTEXT_SIZE,
     }
     with open("config.yaml", "r") as f:
         data: dict[str, str] = cast(dict[str, str], yaml.safe_load(f))
@@ -64,6 +68,7 @@ def init_config() -> Config:
         or "output_model" not in data
         or "transcripts_folder" not in data
         or "output_folder" not in data
+        or "context_size" not in data
     ):
         print("Invalid configuration. Loading default config.")
         make_default_config_file()
@@ -72,4 +77,5 @@ def init_config() -> Config:
         config["output_folder"] = data["output_folder"]
         config["transcription_model"] = data["transcription_model"]
         config["output_model"] = data["output_model"]
+        config["context_size"] = int(data["context_size"])
     return config
