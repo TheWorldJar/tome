@@ -18,7 +18,21 @@ from .config import (
 from .database import create_db, setup_db
 from .execution import get_ollama_response
 from .fileactions import get_extension
+from .messages import (
+    CUDA_OOM_EXECUTION_TEMPLATE,
+    CUDA_OOM_TRANSCRIPTION_TEMPLATE,
+    EXCEPTION_TYPE_PREFIX,
+    INVALID_AUDIO_FILE_PATH,
+    INVALID_PROMPT_EXTENSION_TEMPLATE,
+    INVALID_PROMPT_FILE_PATH,
+    UNHANDLED_CUDA_OOM_ERROR,
+    UNHANDLED_EXCEPTION_ERROR,
+    USAGE_ERROR,
+)
 from .transcription import load_model, start_transcription
+
+# TODO: Find some way to validate the setup script.
+# TODO: Get a Windows setup script.
 
 
 def main():
@@ -49,16 +63,19 @@ def main():
         setup_db(db_cur, db_conn, config)
 
         if args.audio_file is None or args.prompt_file is None:
-            raise ValueError("Usage: tome {audio_file} {prompt_file}")
+            raise ValueError(USAGE_ERROR)
         if not isinstance(args.audio_file, str):
-            raise ValueError("Make sure to provide a valid audio file path in between quotes!")
+            raise ValueError(INVALID_AUDIO_FILE_PATH)
         if not isinstance(args.prompt_file, str):
-            raise ValueError("Make sure to provide a valid prompt file path in between quotes!")
+            raise ValueError(INVALID_PROMPT_FILE_PATH)
 
         prompt_extension = get_extension(args.prompt_file)
         if prompt_extension not in config["prompt_extensions"]:
             raise ValueError(
-                f"Invalid prompt file extension! Got {prompt_extension}. Valid extensions are: {config['prompt_extensions']}"
+                INVALID_PROMPT_EXTENSION_TEMPLATE.format(
+                    prompt_extension=prompt_extension,
+                    valid_extensions=config["prompt_extensions"],
+                )
             )
         print(f"Transcribing: {args.audio_file}")
 
@@ -75,10 +92,10 @@ def main():
             )
         except torch.OutOfMemoryError:
             raise ValueError(
-                "\n\nCUDA out of memory! Please change the transcription_model in config.yaml to a smaller model"
-                + f"\nCurrent transcription_model: {config['transcription_model']}"
-                + f"\nDefault transcription_model: {DEFAULT_TRANSCRIBE_MODEL}"
-                + "If that did not help, please report it at https://github.com/TheWorldJar/tome/issues"
+                CUDA_OOM_TRANSCRIPTION_TEMPLATE.format(
+                    current_model=config["transcription_model"],
+                    default_model=DEFAULT_TRANSCRIBE_MODEL,
+                )
             )
 
         _ = spinner.succeed("Done!")
@@ -102,12 +119,12 @@ def main():
             )
         except torch.OutOfMemoryError:
             raise ValueError(
-                "\n\nCUDA out of memory! Please change the output_model and/or context_size in config.yaml to a smaller model."
-                + f"\nCurrent output_model: {config['output_model']}"
-                + f"\nCurrent context_size: {config['context_size']}"
-                + f"\nDefault output_model: {DEFAULT_OUTPUT_MODEL}"
-                + f"\nDefault context_size: {CONTEXT_SIZE}"
-                + "If that did not help, please report it at https://github.com/TheWorldJar/tome/issues"
+                CUDA_OOM_EXECUTION_TEMPLATE.format(
+                    current_output_model=config["output_model"],
+                    current_context_size=config["context_size"],
+                    default_output_model=DEFAULT_OUTPUT_MODEL,
+                    default_context_size=CONTEXT_SIZE,
+                )
             )
 
         _ = spinner.succeed("Done!")
@@ -120,15 +137,15 @@ def main():
         sys.exit(1)
     except torch.OutOfMemoryError as e:
         print(
-            "\n\nUnhandled CUDA out of memory error! Please report it at https://github.com/TheWorldJar/tome/issues\n\n",
+            UNHANDLED_CUDA_OOM_ERROR,
             e,
         )
         sys.exit(1)
     except Exception as e:
         print(
-            "\n\nUnhandled exception! Please report it at https://github.com/TheWorldJar/tome/issues\n\n",
+            UNHANDLED_EXCEPTION_ERROR,
             e,
-            "\n\nType: ",
+            EXCEPTION_TYPE_PREFIX,
             type(e),
         )
         sys.exit(1)
