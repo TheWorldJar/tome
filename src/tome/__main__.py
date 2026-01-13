@@ -9,6 +9,8 @@ from halo import Halo
 
 from .config import (
     CONTEXT_SIZE,
+    DEFAULT_OUTPUT_MODEL,
+    DEFAULT_TRANSCRIBE_MODEL,
     config_exists,
     init_config,
     make_default_config_file,
@@ -16,7 +18,7 @@ from .config import (
 from .database import create_db, setup_db
 from .execution import get_ollama_response
 from .fileactions import get_extension
-from .transcription import load_model, transcribe_text
+from .transcription import load_model, start_transcription
 
 
 def main():
@@ -62,14 +64,23 @@ def main():
 
         start = time.time()
         _ = spinner.start()
-        model = load_model(config)
-        transcription_file_path, file_id = transcribe_text(
-            args.audio_file,
-            model,
-            db_cur,
-            db_conn,
-            config,
-        )
+        try:
+            model = load_model(config)
+            transcription_file_path, file_id = start_transcription(
+                args.audio_file,
+                model,
+                db_cur,
+                db_conn,
+                config,
+            )
+        except torch.OutOfMemoryError:
+            raise ValueError(
+                "\n\nCUDA out of memory! Please change the transcription_model in config.yaml to a smaller model"
+                + f"\nCurrent transcription_model: {config['transcription_model']}"
+                + f"\nDefault transcription_model: {DEFAULT_TRANSCRIBE_MODEL}"
+                + "If that did not help, please report it at https://github.com/TheWorldJar/tome/issues"
+            )
+
         _ = spinner.succeed("Done!")
         print("Transcription time: " + str(timedelta(seconds=time.time() - start)))
         del model
@@ -79,14 +90,26 @@ def main():
         print(f"Executing prompt: {args.prompt_file}")
         start = time.time()
         _ = spinner.start()
-        note_location = get_ollama_response(
-            db_cur,
-            db_conn,
-            transcription_file_path,
-            args.prompt_file,
-            file_id,
-            config,
-        )
+
+        try:
+            note_location = get_ollama_response(
+                db_cur,
+                db_conn,
+                transcription_file_path,
+                args.prompt_file,
+                file_id,
+                config,
+            )
+        except torch.OutOfMemoryError:
+            raise ValueError(
+                "\n\nCUDA out of memory! Please change the output_model and/or context_size in config.yaml to a smaller model."
+                + f"\nCurrent output_model: {config['output_model']}"
+                + f"\nCurrent context_size: {config['context_size']}"
+                + f"\nDefault output_model: {DEFAULT_OUTPUT_MODEL}"
+                + f"\nDefault context_size: {CONTEXT_SIZE}"
+                + "If that did not help, please report it at https://github.com/TheWorldJar/tome/issues"
+            )
+
         _ = spinner.succeed("Done!")
         print("Execution time: " + str(timedelta(seconds=time.time() - start)))
         print(f"All done! Your note is available at: {note_location}")
@@ -95,8 +118,11 @@ def main():
     except (FileNotFoundError, ValueError) as e:
         print("\n\n", e)
         sys.exit(1)
-    except torch.OutOfMemoryError:
-        print(f"\n\nCUDA out of memory! Please reduce the context size in config.yaml! Default is {CONTEXT_SIZE}.\n\n")
+    except torch.OutOfMemoryError as e:
+        print(
+            "\n\nUnhandled CUDA out of memory error! Please report it at https://github.com/TheWorldJar/tome/issues\n\n",
+            e,
+        )
         sys.exit(1)
     except Exception as e:
         print(
