@@ -3,6 +3,7 @@ import gc
 import sys
 import time
 from datetime import timedelta
+from sqlite3 import Connection, Cursor
 
 import torch
 from halo import Halo
@@ -34,6 +35,15 @@ from .transcription import load_model, start_transcription
 
 # TODO: Find some way to validate the setup script.
 # TODO: Get a Windows setup script.
+
+
+def clean_up(db_cur: Cursor | None, db_conn: Connection | None):
+    if db_cur is not None:
+        db_cur.close()
+    if db_conn is not None:
+        db_conn.close()
+    torch.cuda.empty_cache()
+    _ = gc.collect()
 
 
 def process_arguments(args: argparse.Namespace, config: Config):
@@ -104,6 +114,7 @@ def main():
                 )
             )
 
+        _ = spinner.succeed("Done!")
         print("Transcription time: " + str(timedelta(seconds=time.time() - start)))
         del model
         torch.cuda.empty_cache()
@@ -111,7 +122,7 @@ def main():
 
         print(f"Executing prompt: {prompt_file}")
         start = time.time()
-
+        _ = spinner.start()
         try:
             note_location = get_ollama_response(
                 db_cur,
@@ -134,8 +145,6 @@ def main():
         _ = spinner.succeed("Done!")
         print("Execution time: " + str(timedelta(seconds=time.time() - start)))
         print(f"All done! Your note is available at: {note_location}")
-        db_cur.close()
-        db_conn.close()
     except (FileNotFoundError, ValueError) as e:
         print("\n\n", e)
         sys.exit(1)
@@ -154,12 +163,7 @@ def main():
         )
         sys.exit(1)
     finally:
-        if db_cur is not None:
-            db_cur.close()
-        if db_conn is not None:
-            db_conn.close()
-        torch.cuda.empty_cache()
-        _ = gc.collect()
+        clean_up(db_cur, db_conn)
 
 
 if __name__ == "__main__":
