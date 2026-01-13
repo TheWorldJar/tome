@@ -11,6 +11,7 @@ from .config import (
     CONTEXT_SIZE,
     DEFAULT_OUTPUT_MODEL,
     DEFAULT_TRANSCRIBE_MODEL,
+    Config,
     config_exists,
     init_config,
     make_default_config_file,
@@ -33,6 +34,25 @@ from .transcription import load_model, start_transcription
 
 # TODO: Find some way to validate the setup script.
 # TODO: Get a Windows setup script.
+
+
+def process_arguments(args: argparse.Namespace, config: Config):
+    if args.audio_file is None or args.prompt_file is None:
+        raise ValueError(USAGE_ERROR)
+    if not isinstance(args.audio_file, str):
+        raise ValueError(INVALID_AUDIO_FILE_PATH)
+    if not isinstance(args.prompt_file, str):
+        raise ValueError(INVALID_PROMPT_FILE_PATH)
+
+    prompt_extension = get_extension(args.prompt_file)
+    if prompt_extension not in config["prompt_extensions"]:
+        raise ValueError(
+            INVALID_PROMPT_EXTENSION_TEMPLATE.format(
+                prompt_extension=prompt_extension,
+                valid_extensions=config["prompt_extensions"],
+            )
+        )
+    return args.audio_file, args.prompt_file
 
 
 def main():
@@ -62,29 +82,15 @@ def main():
         db_cur, db_conn = create_db(config)
         setup_db(db_cur, db_conn, config)
 
-        if args.audio_file is None or args.prompt_file is None:
-            raise ValueError(USAGE_ERROR)
-        if not isinstance(args.audio_file, str):
-            raise ValueError(INVALID_AUDIO_FILE_PATH)
-        if not isinstance(args.prompt_file, str):
-            raise ValueError(INVALID_PROMPT_FILE_PATH)
-
-        prompt_extension = get_extension(args.prompt_file)
-        if prompt_extension not in config["prompt_extensions"]:
-            raise ValueError(
-                INVALID_PROMPT_EXTENSION_TEMPLATE.format(
-                    prompt_extension=prompt_extension,
-                    valid_extensions=config["prompt_extensions"],
-                )
-            )
-        print(f"Transcribing: {args.audio_file}")
+        audio_file, prompt_file = process_arguments(args, config)
+        print(f"Transcribing: {audio_file}")
 
         start = time.time()
         _ = spinner.start()
         try:
             model = load_model(config)
             transcription_file_path, file_id = start_transcription(
-                args.audio_file,
+                audio_file,
                 model,
                 db_cur,
                 db_conn,
@@ -98,22 +104,20 @@ def main():
                 )
             )
 
-        _ = spinner.succeed("Done!")
         print("Transcription time: " + str(timedelta(seconds=time.time() - start)))
         del model
         torch.cuda.empty_cache()
         _ = gc.collect()
 
-        print(f"Executing prompt: {args.prompt_file}")
+        print(f"Executing prompt: {prompt_file}")
         start = time.time()
-        _ = spinner.start()
 
         try:
             note_location = get_ollama_response(
                 db_cur,
                 db_conn,
                 transcription_file_path,
-                args.prompt_file,
+                prompt_file,
                 file_id,
                 config,
             )
@@ -151,15 +155,9 @@ def main():
         sys.exit(1)
     finally:
         if db_cur is not None:
-            try:
-                db_cur.close()
-            except Exception:
-                pass
+            db_cur.close()
         if db_conn is not None:
-            try:
-                db_conn.close()
-            except Exception:
-                pass
+            db_conn.close()
         torch.cuda.empty_cache()
         _ = gc.collect()
 
